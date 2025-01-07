@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import List
 
 class StockName(BaseModel):
     name : str
@@ -9,3 +10,6 @@ class KeyValues(BaseModel):
 class TradeHistoryModel(StockName):
     hist : dict
     summary : dict
+
+class ListModel(BaseModel):
+    data : List[str]
