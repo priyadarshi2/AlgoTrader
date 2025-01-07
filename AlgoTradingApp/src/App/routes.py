@@ -33,3 +33,13 @@ async def show_parameters(request : Request):
     if not srv.isValidBacktestKey(key):
         raise HTTPException(status_code=400, detail="Not a valid key!")
     return srv.get_parameters(key)
+
+@router.get("/param-validation", response_model=schm.KeyValues)
+async def show_param_validation(request : Request):
+    symbol = request.query_params.get('ticker_symbol',"")
+    start_date = request.query_params.get('start_date',"")
+    end_date = request.query_params.get('end_date',"")
+    key = int(request.query_params.get('key',0))
+    # Extract additional parameters from the query
+    paramets = {key: value for key, value in request.query_params.items() if key not in ['ticker_symbol', 'start_date', 'end_date', 'key']}
+    return srv.get_validate_params(symbol, start_date, end_date, key, paramets)

@@ -12,4 +12,4 @@ class TradeHistoryModel(StockName):
     summary : dict
 
 class ListModel(BaseModel):
-    data : List[str]
+    data : List

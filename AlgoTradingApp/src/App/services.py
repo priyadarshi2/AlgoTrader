@@ -1,7 +1,9 @@
 import yfinance as yf
 import src.Utils.common_strategies as cstr
 import backtrader as bt
-import src.data as dta
+import src.source_metadata as dta
+import src.Utils.validatators as vdtr
+from src.source_metadata import param_strat_modified
 
 def get_stock_data(symb,start_date,end_date):
     stock = yf.Ticker(symb)
@@ -44,5 +46,20 @@ def fetch_common_strategies():
     return str_dct
 
 def get_parameters(key):
-    strats = dta.param_strats
+    strats = dta.param_strat_modified
     return {"data" : strats[key]}
+
+def get_validate_params(symb, start_date, end_date, key, paramets):
+    # Fetch stock data
+    data = get_stock_data(symb, start_date, end_date)
+    # Fetch default values from param_strat_modified for the given strategy (key)
+    default_params = {param[0]: param[1] for param in param_strat_modified.get(key, [])}
+    print(default_params)
+    # Combine the default parameters with the user-supplied parameters (paramets)
+    paramets.update(default_params)
+    paramets["data_length"] = len(data)
+    
+    # Call validate_params with data and parameters
+    result = vdtr.validate_params(key=key, paramets=paramets)
+    
+    return {"data": result}

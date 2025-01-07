@@ -1,4 +1,4 @@
 import streamlit as st
-import src.UI.requests as rqst
+import src.UI.frontend as frontend
 
-rqst.common_backtest_ui()
+frontend.common_backtest_ui()

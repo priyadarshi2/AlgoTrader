@@ -323,6 +323,6 @@ common_strats = {
     2 : MACDStrategy,
     3 : BollingerBandsStrategy,
     4 : EMACrossoverStrategy,
-    6 : OBVStrategy,
-    7 : ATRStrategy
+    5 : OBVStrategy,
+    6 : ATRStrategy
 }
