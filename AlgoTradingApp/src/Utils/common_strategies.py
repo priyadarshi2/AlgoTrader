@@ -17,6 +17,15 @@ class RSIStrategy(bt.Strategy):
                 setattr(self.params, key, int(value))
             else:
                 print(f"Warning: Unrecognized parameter '{key}' for RSIStrategy.")
+        for key, value in kwargs.items():
+            if isinstance(value, tuple):
+                try:
+                    # Convert first element to string and second to int
+                    converted_value = (str(value[0]), int(value[1]))
+                    kwargs[key] = converted_value
+                except (ValueError, TypeError):
+                    print(f"Warning: Failed to convert tuple for parameter '{key}', leaving it as is.")
+
         self.rsi = cind.CommonTaLibRSI(self.data, rsi_period=int(self.params.rsi_time))
         self.trade_manager = std.TradeManager(self)
         self.param_dict = {}
@@ -49,6 +58,15 @@ class SMACrossoverStrategy(bt.Strategy):
                 setattr(self.params, key, int(value))
             else:
                 print(f"Warning: Unrecognized parameter '{key}' for RSIStrategy.")
+        for key, value in kwargs.items():
+            if isinstance(value, tuple):
+                try:
+                    # Convert first element to string and second to int
+                    converted_value = (str(value[0]), int(value[1]))
+                    kwargs[key] = converted_value
+                except (ValueError, TypeError):
+                    print(f"Warning: Failed to convert tuple for parameter '{key}', leaving it as is.")
+    
         self.fast_sma = cind.CommonTaLibSMA(self.data, period=int(self.params.fast_period))
         self.slow_sma = cind.CommonTaLibSMA(self.data, period=int(self.params.slow_period))
         self.trade_manager = std.TradeManager(self)
@@ -85,6 +103,14 @@ class MACDStrategy(bt.Strategy):
                 setattr(self.params, key, int(value))
             else:
                 print(f"Warning: Unrecognized parameter '{key}' for RSIStrategy.")
+        for key, value in kwargs.items():
+            if isinstance(value, tuple):
+                try:
+                    # Convert first element to string and second to int
+                    converted_value = (str(value[0]), int(value[1]))
+                    kwargs[key] = converted_value
+                except (ValueError, TypeError):
+                    print(f"Warning: Failed to convert tuple for parameter '{key}', leaving it as is.")
         self.macd = cind.CommonTaLibMACD(
             self.data,
             fastperiod=int(self.params.fast_period),
@@ -123,8 +149,17 @@ class BollingerBandsStrategy(bt.Strategy):
         for key, value in kwargs.items():
             if key in self.params._getkeys():
                 setattr(self.params, key, int(value))
-            else:
+            else: 
                 print(f"Warning: Unrecognized parameter '{key}' for RSIStrategy.")
+        for key, value in kwargs.items():
+            if isinstance(value, tuple):
+                try:
+                    # Convert first element to string and second to int
+                    converted_value = (str(value[0]), int(value[1]))
+                    kwargs[key] = converted_value
+                except (ValueError, TypeError):
+                    print(f"Warning: Failed to convert tuple for parameter '{key}', leaving it as is.")
+
         self.bb = cind.CommonTaLibBBANDS(
             self.data,
             period=int(self.params.period),
@@ -164,6 +199,14 @@ class EMACrossoverStrategy(bt.Strategy):
                 setattr(self.params, key, int(value))
             else:
                 print(f"Warning: Unrecognized parameter '{key}' for RSIStrategy.")
+        for key, value in kwargs.items():
+            if isinstance(value, tuple):
+                try:
+                    # Convert first element to string and second to int
+                    converted_value = (str(value[0]), int(value[1]))
+                    kwargs[key] = converted_value
+                except (ValueError, TypeError):
+                    print(f"Warning: Failed to convert tuple for parameter '{key}', leaving it as is.")
 
         self.fast_ema = cind.CommonTaLibEMA(self.data, period=self.params.fast_period)
         self.slow_ema = cind.CommonTaLibEMA(self.data, period=self.params.slow_period)
@@ -201,6 +244,15 @@ class OBVStrategy(bt.Strategy):
                 setattr(self.params, key, int(value))
             else:
                 print(f"Warning: Unrecognized parameter '{key}' for RSIStrategy.")
+        for key, value in kwargs.items():
+            if isinstance(value, tuple):
+                try:
+                    # Convert first element to string and second to int
+                    converted_value = (str(value[0]), int(value[1]))
+                    kwargs[key] = converted_value
+                except (ValueError, TypeError):
+                    print(f"Warning: Failed to convert tuple for parameter '{key}', leaving it as is.")
+
         self.obv = cind.CommonTaLibOBV(self.data, )
         self.trade_manager = std.TradeManager(self)
         self.param_dict = {}
@@ -237,7 +289,16 @@ class ATRStrategy(bt.Strategy):
                 setattr(self.params, key, int(value))
             else:
                 print(f"Warning: Unrecognized parameter '{key}' for RSIStrategy.")
+        for key, value in kwargs.items():
+            if isinstance(value, tuple):
+                try:
+                    # Convert first element to string and second to int
+                    converted_value = (str(value[0]), int(value[1]))
+                    kwargs[key] = converted_value
+                except (ValueError, TypeError):
+                    print(f"Warning: Failed to convert tuple for parameter '{key}', leaving it as is.")
         self.atr = cind.CommonTaLibATR(self.data, atr_period=self.params.atr_time)
+
         self.trade_manager = std.TradeManager(self)
         self.param_dict = {}
     
