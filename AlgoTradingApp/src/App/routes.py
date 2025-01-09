@@ -12,6 +12,7 @@ async def show_common_backtest(request : Request):
     end_date = request.query_params.get('end_date',"")
     amount = float(request.query_params.get('amount',""))
     backtest_key = int(request.query_params.get('key',0))
+    time_delta = (request.query_params.get('time_delta',"1d"))
     # Extract additional parameters from the query
     paramets = {key: value for key, value in request.query_params.items() if key not in ['ticker_symbol', 'start_date', 'end_date', 'amount', 'key']}
     if not srv.isValidBacktestKey(backtest_key):
@@ -21,7 +22,7 @@ async def show_common_backtest(request : Request):
     if start_date > end_date:
         raise HTTPException(status_code=406, detail="Wrong dates entry")
     else:
-        return srv.get_backtest(symbol, start_date, end_date, amount, backtest_key, paramets)
+        return srv.get_backtest(symbol, start_date, end_date, amount, backtest_key, paramets, time_delta)
 
 @router.get("/common-strategies", response_model=schm.KeyValues)
 async def show_common_strategies():
@@ -40,6 +41,7 @@ async def show_param_validation(request : Request):
     start_date = request.query_params.get('start_date',"")
     end_date = request.query_params.get('end_date',"")
     key = int(request.query_params.get('key',0))
+    time_delta = (request.query_params.get('time_delta',"1d"))
     # Extract additional parameters from the query
     paramets = {key: value for key, value in request.query_params.items() if key not in ['ticker_symbol', 'start_date', 'end_date', 'key']}
-    return srv.get_validate_params(symbol, start_date, end_date, key, paramets)
+    return srv.get_validate_params(symbol, start_date, end_date, key, paramets, time_delta)

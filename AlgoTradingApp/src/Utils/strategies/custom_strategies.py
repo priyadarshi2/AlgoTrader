@@ -1,4 +1,4 @@
-import src.Utils.common_indicators as cind
+import src.Utils.indicators.common_indicators as cind
 import backtrader as bt
 import src.Utils.standard as std 
 

@@ -1,22 +1,12 @@
 from fastapi import HTTPException, Response
 import datetime
 
-def validate_period(period, min_value, max_value, data_length):
-    
-    errors = []
-
-    # Validate period value
-    if not isinstance(period, int) or period < min_value or period > max_value:
-        errors.append(f"Period must be an integer between {min_value} and {max_value}. Provided value: {period}")
-
-    # Check if there's enough data for the period
-    if data_length < period:
-        errors.append(f"Not enough data points to calculate the period. Required: {period}, Available: {data_length}")
-
-    return {
-        "is_valid": not errors,
-        "errors": errors
-    }
+def validate_period(period, min_val, max_val, data_length): 
+    errors = [] 
+    if period < min_val or period > max_val: 
+        errors.append(f"Period {period} is out of bounds. Must be between {min_val} and {max_val}.") 
+    if period >= data_length: errors.append(f"Period {period} cannot be greater than or equal to the length of the data {data_length}.") 
+    return { "is_valid": not errors, "errors": errors }
 
 def validate_params(key, paramets):    
     # Fetch the validation function based on the key

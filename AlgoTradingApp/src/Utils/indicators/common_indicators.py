@@ -6,22 +6,22 @@ from typing import Optional
 
 class CommonTaLibRSI(bt.Indicator):    #Common TA-Lib RSI Indicator 
     lines = ('rsi',)
-    params = (('rsi_period',14),)
+    params = (('period',14),)
 
     def __init__(self, **kwargs):
         # Dynamically update parameters
         for key, value in kwargs.items():
             if key in self.params._getkeys():
                 setattr(self.params, key, value)
-        self.addminperiod(int(self.params.rsi_period))
+        self.addminperiod(int(self.params.period))
     
     def next(self):
         #Extract close prices
         close_prices = np.array(self.data.close.get(size=len(self.data)))
 
         #Compute RSI
-        if len(close_prices) >= self.params.rsi_period:
-            rsi_values = ta.RSI(close_prices, timeperiod=self.params.rsi_period)
+        if len(close_prices) >= self.params.period:
+            rsi_values = ta.RSI(close_prices, timeperiod=self.params.period)
             self.lines.rsi[0] = rsi_values[-1]
         else:
             self.lines.rsi[0] = float('nan')
@@ -155,14 +155,14 @@ class CommonTaLibOBV(bt.Indicator):
 class CommonTaLibATR(bt.Indicator):
     # Common TA-Lib ATR Indicator
     lines = ('atr',)
-    params = (('atr_period', 14),)
+    params = (('period', 14),)
 
     def __init__(self, **kwargs):
         # Dynamically update parameters
         for key, value in kwargs.items():
             if key in self.params._getkeys():
                 setattr(self.params, key, value)
-        self.addminperiod(int(self.params.atr_period))
+        self.addminperiod(int(self.params.period))
 
     def next(self):
         # Extract high, low, and close prices
@@ -171,8 +171,8 @@ class CommonTaLibATR(bt.Indicator):
         close_prices = np.array(self.data.close.get(size=len(self.data)))
 
         # Compute ATR
-        if len(close_prices) >= self.params.atr_period:
-            atr_values = ta.ATR(high_prices, low_prices, close_prices, timeperiod=self.params.atr_period)
+        if len(close_prices) >= self.params.period:
+            atr_values = ta.ATR(high_prices, low_prices, close_prices, timeperiod=self.params.period)
             self.lines.atr[0] = atr_values[-1]
         else:
             self.lines.atr[0] = float('nan')

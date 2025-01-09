@@ -1,17 +1,17 @@
 import yfinance as yf
-import src.Utils.common_strategies as cstr
+import src.Utils.strategies.common_strategies as cstr
 import backtrader as bt
 import src.source_metadata as dta
 import src.Utils.validatators as vdtr
 from src.source_metadata import param_strat_modified
 
-def get_stock_data(symb,start_date,end_date):
+def get_stock_data(symb,start_date,end_date, time_delta):
     stock = yf.Ticker(symb)
-    data = stock.history(start=start_date, end=end_date)
+    data = stock.history(start=start_date, end=end_date, interval=time_delta)
     return data
 
-def get_backtest(symb,start_date,end_date,amount, key, paramets):
-    data = get_stock_data(symb,start_date,end_date)
+def get_backtest(symb,start_date,end_date,amount, key, paramets, time_delta):
+    data = get_stock_data(symb,start_date,end_date,time_delta)
     result = backtest(data,cstr.common_strats[key],amount, paramets)
     trades, summary = result.trade_manager.get_result()
     strategies = fetch_common_strategies()
@@ -46,12 +46,13 @@ def fetch_common_strategies():
     return str_dct
 
 def get_parameters(key):
-    strats = dta.param_strat_modified
-    return {"data" : strats[key]}
+    param_list = param_strat_modified[key]  
+    result = [param[:4] for param in param_list] 
+    return {"data" : result}
 
-def get_validate_params(symb, start_date, end_date, key, paramets):
+def get_validate_params(symb, start_date, end_date, key, paramets, time_delta):
     # Fetch stock data
-    data = get_stock_data(symb, start_date, end_date)
+    data = get_stock_data(symb, start_date, end_date, time_delta)
     # Fetch default values from param_strat_modified for the given strategy (key)
     default_params = {param[0]: param[1] for param in param_strat_modified.get(key, [])}
     print(default_params)
