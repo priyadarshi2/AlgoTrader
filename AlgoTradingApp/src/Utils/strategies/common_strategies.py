@@ -12,7 +12,21 @@ class RSIStrategy(bt.Strategy):
     )
 
     def __init__(self, **kwargs):
-    
+        # Dynamically update parameters
+        for key, value in kwargs.items():
+            if key in self.params._getkeys():
+                setattr(self.params, key, int(value))
+            else:
+                print(f"Warning: Unrecognized parameter '{key}' for RSIStrategy.")
+        for key, value in kwargs.items():
+            if isinstance(value, tuple):
+                try:
+                    # Convert first element to string and second to int
+                    converted_value = (str(value[0]), int(value[1]))
+                    kwargs[key] = converted_value
+                except (ValueError, TypeError):
+                    print(f"Warning: Failed to convert tuple for parameter '{key}', leaving it as is.")
+
         self.rsi = cind.CommonTaLibRSI(self.data, rsi_period=int(self.params.rsi_time))
         self.trade_manager = std.TradeManager(self)
         self.param_dict = {}
