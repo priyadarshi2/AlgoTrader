@@ -22,10 +22,10 @@ def fetch_strategies():
         st.sidebar.error(f"Error fetching strategies: {e}")
         return {}
 
-def fetch_parameters(key):
+def fetch_parameters(selected_strategy):
     """Fetch strategy parameters based on the selected key."""
     try:
-        response = requests.get(PARAMETERS_URL + str(key))
+        response = requests.get(PARAMETERS_URL + str(selected_strategy))
         if response.status_code == 200:
             return response.json()["data"]
         else:
@@ -35,29 +35,20 @@ def fetch_parameters(key):
         st.error(f"Error fetching parameters: {e}")
         return {}
 
-def run_backtest(params_dict):
+def run_backtest(paramets):
     """Send a GET request to the backend to execute the backtest."""
     try:
-        response = requests.get(BACKTEST_URL, params=params_dict)
+        response = requests.post(BACKTEST_URL, json=paramets)
         return response
     except Exception as e:
         st.error(f"Error running backtest: {e}")
         return None
 
-def validate_params(symbol, start_date, end_date, key, param_values):
-    """Call the param-validation endpoint to validate parameters."""
-    params_dict = {
-        "ticker_symbol": symbol,
-        "start_date": start_date,
-        "end_date": end_date,
-        "key": key
-    }
-
-    # Add strategy parameters to the validation request
-    params_dict.update(param_values)
+def validate_params(paramets):
+    """Send a GET request to the backend to validate the parameters."""
 
     try:
-        response = requests.get(PARAM_VALIDATION_URL, params=params_dict)
+        response = requests.post(PARAM_VALIDATION_URL, json=paramets)
         if response.status_code == 200:
             return response
         else:
@@ -73,11 +64,27 @@ def common_backtest_ui():
     # Streamlit app title
     st.title("Common Strategies Backtest")
 
+    intervals = {
+        "1 Minute" : "1m",
+        "2 Minutes" : "2m",
+        "5 Minutes" : "5m",
+        "15 Minutes" : "15m",
+        "30 Minutes" : "30m",
+        "1 Hour" : "1h",
+        "90 Minutes" : "90m",
+        "1 Day" : "1d",
+        "5 Days" : "5d",
+        "1 Week" : "1wk",
+        "1 Month" : "1mo",
+        "3 Months" : "3mo"
+    }
+
     # Input fields for backtest parameters
     symbol = st.text_input("Ticker Symbol", placeholder="e.g., AAPL")
     start_date = st.date_input("Start Date")
     end_date = st.date_input("End Date")
     amount = st.number_input("Investment Amount", min_value=0.0, value=1000.0)
+    interval = st.selectbox("Data Interval", list(intervals.keys()))
 
     # Fetch available strategies
     st.sidebar.title("Available Strategies")
@@ -85,14 +92,12 @@ def common_backtest_ui():
 
     if strategies:
         # Strategy selection
-        strategy_keys = list(strategies.keys())
-        strategy_values = list(strategies.values())
+        strategy_values = list(strategies.keys())
         selected_strategy = st.sidebar.selectbox("Select Strategy", strategy_values)
-        backtest_key = strategy_keys[strategy_values.index(selected_strategy)]
-
+      
         # Fetch and display strategy parameters
         st.sidebar.header("Parameter Settings")
-        params = fetch_parameters(backtest_key)
+        params = fetch_parameters(selected_strategy)
         param_values = {}
 
         if params:
@@ -134,20 +139,24 @@ def common_backtest_ui():
                 end_date_str = end_date.isoformat()
 
                 # Build query parameters for the request
-                params_dict = {
+                params_assets = {
                     "ticker_symbol": symbol,
                     "start_date": start_date_str,
                     "end_date": end_date_str,
                     "amount": amount,
-                    "key": backtest_key
+                    "time_delta": intervals[interval],
                 }
 
-                # Add strategy parameters to the request
-                params_dict.update(param_values)
-
+                paramets = {}
+                paramets["strategy_params"] = {
+                    "name": selected_strategy,
+                    "optional_params": param_values
+                } 
+                paramets["asset_params"] = params_assets
+                print("paramets==>",paramets)
                 # Call validation endpoint before running backtest
                 with st.spinner("Validating parameters..."):
-                    validation_response = validate_params(symbol, start_date_str, end_date_str, backtest_key, param_values)
+                    validation_response = validate_params(paramets)
 
                 # Handle validation response
                 if validation_response:
@@ -160,7 +169,7 @@ def common_backtest_ui():
                     else:
                         # If validation passes, proceed with backtest
                         with st.spinner("Running backtest..."):
-                            response = run_backtest(params_dict)
+                            response = run_backtest(paramets)
 
                         # Handle backtest response
                         if response:

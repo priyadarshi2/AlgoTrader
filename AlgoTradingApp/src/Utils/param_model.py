@@ -1,141 +1,153 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Dict, Any, Optional, Union, Callable
 from src.source_metadata import param_strat_modified, params_keys
-from src.Utils.validatators import input_validations
 from datetime import date, timedelta
 
 class StrategyParams(BaseModel):
-    '''This class stores Parameters required to execute a trading strategy'''
     name: str = Field(..., description="Name of the strategy")
-    optional_params: Dict[str, Union[int,float,bool]] = {}
+    optional_params: Dict[str, Union[int, float, bool]] = {}
 
     def __init__(self, **data):
-        '''Initialise'''
-        strategy_index = params_keys.get(data['name']) 
-        if strategy_index is None: #Check if the key exists
-            raise ValueError(f"Invalid strategy name: {data['name']}") 
-        strategy_params = param_strat_modified.get(strategy_index, []) 
-        for param, default, _, _, ptype in strategy_params: 
-            self.optional_params[param] = ptype(data.get(param, default)) 
+        super().__init__(**data)
+        self.optional_params = {}
 
-        super().__init__(**data) 
+        strategy_index = params_keys.get(data['name'])
+        
+        if strategy_index is None:
+            raise ValueError(f"Invalid strategy name: {data['name']}")
+        
+        # Get strategy parameters from the param_strat_modified dictionary
+        strategy_params = param_strat_modified.get(strategy_index, [])
+        
+        # For each parameter defined in the strategy, check if it's in the input data
+        # If not, use the default value from the dictionary
+        for param, default, _, _, ptype in strategy_params:
+            # Use the provided value or the default from the dictionary
+            self.optional_params[param] = ptype(data.get(param, default))
+        
         
 
-    def get_param(self, key: str):
-        '''Get the exact param you want'''
-        return self.optional_params.get(key, 'default')
+    def is_valid(self) -> bool:
+        # Add strategy-specific validation logic
+        return True
 
-    def is_valid(self): 
-        errors = self.model_validate() 
-        return len(errors) == 0,errors
-    
-    def apply_params(self):
-        """
-        Return the tuple of parameters to be assigned to the strategy class.
-        """
+    def get_params_tuple(self):
         strategy_index = params_keys.get(self.name)
         if strategy_index is None:
             raise ValueError(f"Invalid strategy name: {self.name}")
-
         strategy_params = param_strat_modified.get(strategy_index, [])
-        params_tuple = tuple((param, self.optional_params.get(param, default)) for param, default, _, _, _ in strategy_params)
-        return params_tuple
+        return tuple(
+            (param, self.optional_params.get(param, default))
+            for param, default, _, _, _ in strategy_params
+        )
+    
+    #function that returns tuple of all values in optional_params dictionary
+    def get_optional_params_tuple(self):
+        return tuple(self.optional_params.values())
+
 
 class AssetParams(BaseModel):
-    '''This class stores the data required to acquire the asset data'''
     ticker_symbol: str = Field(..., description="Ticker symbol of the asset")
     start_date: date = Field(..., description="Start date for the strategy")
     end_date: date = Field(..., description="End date for the strategy")
     amount: float = Field(..., description="Amount to be invested")
-    time_delta: float = Field(..., description="Timw delta between start and end dates")
+    time_delta: str = Field(default="1d", description="Time delta between start and end dates")
+    data_length: Optional[int] = None
 
-    def __init__(self, **data): 
-        super().__init__(**data) # Call the BaseModel initializer
-
-    @field_validator("start_date", "end_date", mode="before")
-    def check_date_format(cls, v):
-        if not isinstance(v, date):
-            raise ValueError("Date must be in YYYY-MM-DD format")
-        return v
-
-    @field_validator("end_date", mode="before")
-    def check_dates(cls, v, values):
-        if "start_date" in values and v < values["start_date"]:
+    @model_validator(mode='before')
+    def validate_dates(cls, values):
+        start_date = values.get("start_date")
+        end_date = values.get("end_date")
+        if start_date and end_date and start_date >= end_date:
             raise ValueError("End date must be after start date")
-        return v
+        return values
 
-    @field_validator("amount", mode="before")
-    def check_amount(cls, v):
-        if v <= 0:
-            raise ValueError("Amount must be greater than 0")
-        return v
-
-    def check_dates_order(self) -> bool:
-        """
-        Check if the start date is earlier than the end date.
-        Returns True if valid, raises ValueError otherwise.
-        """
-        if self.start_date >= self.end_date:
-            raise ValueError("End date must be after start date")
+    def is_valid(self) -> bool:
+        # Add asset-specific validation logic
         return True
-    
-    def compute_total_data_points(self) -> int:
-        """
-        Compute the total number of data points within the specified time frame.
-        Returns the total number of data points.
-        """
-        if not self.check_dates_order():
-            raise ValueError("Invalid date order: Start datetime must be earlier than end datetime")
 
-        total_seconds = (self.end_date - self.start_date).total_seconds()
-        total_data_points = total_seconds // self.time_delta.total_seconds()
-        return int(total_data_points)
+    def get_params_tuple(self):
+        return (self.ticker_symbol, self.start_date, self.end_date, self.time_delta)
     
-class Params(StrategyParams, AssetParams):
-    """
-    A class that combines StrategyParams and AssetParams.
-    Inherits from both StrategyParams and AssetParams.
-    """
-    def __init__(self, **data): # Separate strategy parameters and asset parameters 
-        strategy_params = {key: data[key] for key in StrategyParams.model_fields.keys() if key in data} 
-        asset_params = {key: data[key] for key in AssetParams.model_fields.keys() if key in data} 
-        # Initialize the parent classes with their respective parameters 
-        StrategyParams.__init__(self, **strategy_params) 
-        AssetParams.__init__(self, **asset_params) 
-        # Compute data length using the AssetParams method 
-        self.data_length = self.compute_total_data_points() 
-        # Perform validation upon initialization 
-        errors = self.validate() 
-        if errors: 
-            raise ValueError(f"Invalid input parameters: {errors}") 
-        
-    def validate(self):
-        """
-        Validate both strategy and asset parameters.
-        Returns a list of errors if any.
-        """
+    def set_data_length(self, data_length):
+        self.data_length = data_length
+    
+class Params(BaseModel):
+    strategy_params: StrategyParams
+    asset_params: AssetParams
+
+    @model_validator(mode='before')
+    def validate_combined(cls, values):
+        # Validate strategy and asset parameters
+        strategy_data = values.get("strategy_params")
+        print("values",strategy_data)
+        asset_data = values.get("asset_params")
+        print("asset", asset_data)
+
+        if not strategy_data or not asset_data:
+            raise ValueError("Both strategy_params and asset_params must be provided.")
+
+        # Validate strategy name
+        if params_keys.get(strategy_data["name"]) not in params_keys.values():
+            print("strategy_data['name']",strategy_data["name"])
+            raise ValueError(f"Invalid strategy name: {strategy_data['name']}")
+
+        return values
+
+    def validate(self) -> Dict[str, Union[bool, list]]:
         errors = []
+        if not self.strategy_params.is_valid():
+            errors.append("Invalid strategy parameters.")
+        if not self.asset_params.is_valid():
+            errors.append("Invalid asset parameters.")
+        return {"is_valid": len(errors) == 0, "errors": errors}
 
-        # Validate strategy parameters
-        strategy_index = params_keys.get(self.name)
+    def get_combined_params(self):
+        return {
+            "strategy": self.strategy_params.get_params_tuple(),
+            "asset": self.asset_params.get_params_tuple(),
+        }
+    
+    def set_asset_data_length(self, data_length: int):
+        """
+        Set the data length in the AssetParams instance.
+        
+        Args:
+            data_length (int): The length of the data to be set.
+        """
+        self.asset_params.set_data_length(data_length)
+    
+    @staticmethod
+    def get_params_detail(strategy_name: str, custom_params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Static method to fetch and initialize the strategy parameters based on the strategy name.
+        Args:
+            strategy_name (str): The name of the strategy.
+            custom_params (Optional[Dict[str, Any]]): A dictionary of custom parameters to override the defaults.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing strategy parameters with values.
+        """
+        # Retrieve strategy index using the name of the strategy
+        strategy_index = params_keys.get(strategy_name)
+
         if strategy_index is None:
-            errors.append(f"Invalid strategy name: {self.name}")
-        else:
-            validation_func = input_validations.get(strategy_index)
-            if validation_func:
-                validation_results = validation_func(**self.optional_params, data_length=self.data_length)
-                if not validation_results["is_valid"]:
-                    errors.extend(validation_results["errors"])
+            raise ValueError(f"Invalid strategy name: {strategy_name}")
 
-        # Validate asset parameters
-        try:
-            self.check_dates_order()  # Check date order
-        except ValueError as e:
-            errors.append(str(e))
+        # Get default parameters for the strategy from the param_strat_modified dictionary
+        strategy_params = param_strat_modified.get(strategy_index, [])
+        default_params = {}
 
-        return errors
-    
+        # Initialize default parameters
+        for param, default, _, _, ptype in strategy_params:
+            default_params[param] = ptype(default)
 
-    
+        # Override with custom parameters if provided
+        if custom_params:
+            for param, value in custom_params.items():
+                if param in default_params:
+                    default_params[param] = value
+
+        return default_params
 
 

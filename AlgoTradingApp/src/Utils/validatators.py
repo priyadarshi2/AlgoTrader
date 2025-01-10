@@ -1,4 +1,5 @@
 from fastapi import HTTPException, Response
+from src.Utils.param_model import Params
 import datetime
 
 def validate_period(period, min_val, max_val, data_length): 
@@ -8,14 +9,16 @@ def validate_period(period, min_val, max_val, data_length):
     if period >= data_length: errors.append(f"Period {period} cannot be greater than or equal to the length of the data {data_length}.") 
     return { "is_valid": not errors, "errors": errors }
 
-def validate_params(key, paramets):    
+def validate_params(key : int, paramets : Params):    
     # Fetch the validation function based on the key
     validate_fn = input_validations.get(key)
     
     if validate_fn:
         # Pass the parameters along with the length of the data
         # Assuming paramets contains a dictionary of the relevant parameters for the strategy
-        result = validate_fn(**paramets)
+        print("data_length==>",paramets.asset_params.data_length)
+        result = validate_fn(*paramets.strategy_params.get_optional_params_tuple(), data_length=paramets.asset_params.data_length)
+        print("result==>",result)
         return result
     else:
         return {"error": f"Invalid strategy key: {key}"}
