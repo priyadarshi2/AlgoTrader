@@ -1,45 +1,27 @@
+import src.Utils.strategies.common_strategies as common 
+import src.Utils.strategies.custom_strategies as custom 
+import src.Utils.indicators.custom_indicators as indicators 
+import src.Utils.validatators as valids
+from src.param_definitions import params_keys, param_strat_modified
 
-params_keys = {
-    'RSI' : 0,
-    'SMACrossOver' : 1,
-    'MACD' : 2,
-    'BBands' : 3,
-    'EMACrossOver' : 4,
-    'OBV' : 5,
-    'ATR': 6,
+strats_inds = {
+    0 : common.RSIStrategy,
+    1 : common.SMACrossoverStrategy,
+    2 : common.MACDStrategy,
+    3 : common.BollingerBandsStrategy,
+    4 : common.EMACrossoverStrategy,
+    5 : common.OBVStrategy,
+    6 : common.ATRStrategy,
+    7 : indicators.CombinedPatternIndicator,
+    8 : custom.UFOStrategy
 }
 
-param_strat_modified = {
-    0: [  # RSIStrategy
-        ('rsi_time', 14, 2, 50, int), 
-        ('rsi_upper', 70, 50, 100 ,int), 
-        ('rsi_lower', 30, 0, 50,int)
-    ],
-    1: [  # SMACrossoverStrategy
-        ('fast_period', 10, 1, 50,int), 
-        ('slow_period', 30, 10, 200,int)
-    ],
-    2: [  # MACDStrategy
-        ('fast_period', 12, 1, 50, int), 
-        ('slow_period', 26, 10, 200, int), 
-        ('signal_period', 9, 1, 50, int)
-    ],
-    3: [  # BollingerBandsStrategy
-        ('period', 20, 5, 100, int), 
-        ('nbdevup', 2, 1, 5, int), 
-        ('nbdevdn', 2, 1, 5, int)
-    ],
-    4: [  # EMACrossoverStrategy
-        ('fast_period', 10, 1, 50, int), 
-        ('slow_period', 30, 10, 200, int)
-    ],
-    5: [  # OBVStrategy (No parameters defined)
-    ],
-    6: [  # ATRStrategy
-        ('atr_time', 14, 1, 50, int), 
-        ('atr_threshold', 2, 0, 5, float) ####this will be float#######
-    ]
+input_valids = {
+    0 : valids.validate_rsi_inputs,
+    1 : valids.validate_sma_crossover_inputs,
+    2 : valids.validate_macd_inputs,
+    3 : valids.validate_bollinger_bands_inputs,
+    4 : valids.validate_ema_crossover_inputs,
+    5 : valids.validate_obv_inputs,
+    6 : valids.validate_atr_inputs
 }
-
-
-

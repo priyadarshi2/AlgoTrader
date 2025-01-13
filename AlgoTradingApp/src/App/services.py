@@ -3,8 +3,8 @@ import src.Utils.strategies.common_strategies as cstr
 import backtrader as bt
 import src.source_metadata as dta
 import src.Utils.validatators as vdtr
-from src.source_metadata import param_strat_modified, params_keys
-from src.Utils.param_model import AssetParams, StrategyParams, Params
+from src.Utils.param_model import CustomParams, StrategyParams, Params 
+from src.source_metadata import strats_inds, params_keys, param_strat_modified
 
 def get_stock_data(symb,start_date,end_date, time_delta):
     stock = yf.Ticker(symb)
@@ -58,3 +58,26 @@ def get_validate_params(paramets : Params):
     result = vdtr.validate_params(key=key, paramets=paramets)
     
     return {"data": result}
+
+def get_custom_backtest(param : CustomParams):
+    print("===============>get_custom_backtest")
+    stock_details = param.asset_params.get_params_tuple()
+    data = get_stock_data(*stock_details)
+    param.set_asset_data_length(len(data))
+    print("===============>param_set_length")
+    result = customBacktest(data,param)
+    trades, summary = result.trade_manager.get_result()
+    summary["Strategy"] = param.strategy_params[0].name
+    return {"name" : param.asset_params.ticker_symbol, "hist" : trades, "summary" : summary}
+
+def customBacktest(data, param : CustomParams):
+    data_feed = bt.feeds.PandasData(dataname=data)
+    cerebro = bt.Cerebro()
+    cerebro.adddata(data_feed)
+    strategy = strats_inds[params_keys[param.strategy_params[0].name]]
+    cerebro.addstrategy(strategy, param.strategy_params)
+    cerebro.broker.set_cash(param.asset_params.amount)
+    cerebro.broker.setcommission(commission=0.001)
+    backtest_result = cerebro.run()
+    result = backtest_result[0]
+    return result

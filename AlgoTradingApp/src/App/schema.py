@@ -13,3 +13,7 @@ class TradeHistoryModel(StockName):
 
 class ListModel(BaseModel):
     data : List
+
+class ActionHistoryModel(StockName):
+    hist : list
+    summary : dict

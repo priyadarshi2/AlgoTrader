@@ -1,17 +1,18 @@
-import src.Utils.indicators.common_indicators as cind
+import src.Utils.indicators.custom_indicators as cind
 import backtrader as bt
 import src.Utils.standard as std 
+from src.Utils.param_model import CustomParams, StrategyParams
+from typing import List
 
 class UFOStrategy(bt.Strategy):
-    params = (
-        ('risk_per_trade', 0.01),  # Risk per trade as a fraction of available cash
-        ('stop_loss_atr', 2.0),    # ATR multiplier for stop loss
-        ('take_profit_atr', 3.0),  # ATR multiplier for take profit
-    )
-
-    def __init__(self):
+    params = CustomParams.get_params_detail('UFO')
+    def __init__(self, strategy_params :  List[StrategyParams] = None):
         """Initialize strategy."""
         super(UFOStrategy, self).__init__()
+
+        if strategy_params: 
+            self._update_params(strategy_params[0])
+        
         self.order = None
         self.trades = []
         self.metrics = {}
@@ -19,8 +20,25 @@ class UFOStrategy(bt.Strategy):
         self.initialized = False
         self.consecutive_losses = 0
         self.patterns = []  # List to store detected patterns
-        self.pattern = cind.CombinedPatternIndicator(self.data)
+        print("UFO", self.params.stop_loss_atr)
+        self.pattern = cind.CombinedPatternIndicator(self.data, strategy_params=strategy_params[1])
         self.trade_manager = std.TradeManager(self)
+
+    def _update_params(self, strategy_params: StrategyParams):
+        """Update strategy parameters with provided values."""
+        updated_params = []
+
+        # Convert params tuple to a dictionary for easier update
+        params_dict = dict(CustomParams.get_params_detail('UFO'))
+
+        # Update the params dictionary with the provided strategy parameters
+        for param, value in strategy_params.optional_params.items():
+            if param in params_dict:
+                params_dict[param] = value
+        # Append the updated params to self.params
+        for param, value in updated_params:
+            setattr(self.params, param, value)
+      
 
     def next(self):
         # Update metrics
@@ -42,10 +60,10 @@ class UFOStrategy(bt.Strategy):
             # Execute trades based on pattern type
             if pattern.pattern_type in [cind.PatternType.RBR, cind.PatternType.DBR]:
                 if not self.position:  # Only enter if no position exists
-                    self.trade_manager.execute_trade('buy')
+                    self.trade_manager.execute_trade('buy', size=position_size)
             elif pattern.pattern_type in [cind.PatternType.RBD, cind.PatternType.DBD]:
                 if not self.position:  # Only enter if no position exists
-                    self.trade_manager.execute_trade('sell')
+                    self.trade_manager.execute_trade('sell', size=position_size)
         
         # Manage existing positions
         if self.position:
@@ -69,19 +87,18 @@ class UFOStrategy(bt.Strategy):
         current_value = self.broker.getvalue()
         daily_pnl = ((current_value - self._last_portfolio_value) / self._last_portfolio_value) if self._last_portfolio_value > 0 else 0
         self._last_portfolio_value = current_value
-            
+
         # Update metrics dictionary
         self.metrics.update({
-            'portfolio_value': current_value,
             'daily_pnl': daily_pnl,
-            'total_trades': len(self.trades),
-            'winning_trades': len([t for t in self.trades if t['pnl'] > 0]),
-            'losing_trades': len([t for t in self.trades if t['pnl'] < 0])
         })
 
     def stop(self):
+        self.trade_manager.addTradeData(tradedata=self.metrics)
         self.trade_manager.finalize_portfolio()
     
 
-
+custom_strats = {
+    0 : UFOStrategy
+}
             

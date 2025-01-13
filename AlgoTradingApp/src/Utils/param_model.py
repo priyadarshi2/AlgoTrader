@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, field_validator, model_validator
-from typing import Dict, Any, Optional, Union, Callable
-from src.source_metadata import param_strat_modified, params_keys
+from typing import Dict, Any, Optional, Union, Callable, List
 from datetime import date, timedelta
+from src.param_definitions import param_strat_modified, params_keys
 
 class StrategyParams(BaseModel):
     name: str = Field(..., description="Name of the strategy")
@@ -72,6 +72,8 @@ class AssetParams(BaseModel):
     def set_data_length(self, data_length):
         self.data_length = data_length
     
+
+
 class Params(BaseModel):
     strategy_params: StrategyParams
     asset_params: AssetParams
@@ -88,6 +90,7 @@ class Params(BaseModel):
             raise ValueError("Both strategy_params and asset_params must be provided.")
 
         # Validate strategy name
+        from src.source_metadata import param_strat_modified, params_keys
         if params_keys.get(strategy_data["name"]) not in params_keys.values():
             print("strategy_data['name']",strategy_data["name"])
             raise ValueError(f"Invalid strategy name: {strategy_data['name']}")
@@ -149,5 +152,67 @@ class Params(BaseModel):
                     default_params[param] = value
 
         return default_params
+
+class CustomParams(BaseModel):
+    strategy_params: List[StrategyParams]
+    asset_params: AssetParams
+
+    @model_validator(mode='before')    
+    def validate_params(cls, value):
+        if not value:
+            raise ValueError("Both strategy_params and asset_params must be provided.")
+        return value
+
+    def validate(self) -> Dict[str, Union[bool, list]]:
+        errors = []
+        for strategy in self.strategy_params:
+            if not strategy.is_valid():
+                errors.append("Invalid strategy parameters.")
+        if not self.asset_params.is_valid():
+            errors.append("Invalid asset parameters.")
+        return {"is_valid": len(errors) == 0, "errors": errors}
+
+    def get_combined_params(self):
+        return {
+            "strategy": [strategy.get_params_tuple() for strategy in self.strategy_params],
+            "asset": self.asset_params.get_params_tuple(),
+        }
+
+    def set_asset_data_length(self, data_length: int):
+        self.asset_params.set_data_length(data_length)
+    
+    @staticmethod
+    def get_params_detail(strategy_name: str, custom_params: Optional[Dict[str, Any]] = None) -> dict[str,Any]:
+        """
+        Static method to fetch and initialize the strategy parameters based on the strategy name.
+        Args:
+            strategy_name (str): The name of the strategy.
+            custom_params (Optional[Dict[str, Any]]): A dictionary of custom parameters to override the defaults.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing strategy parameters with values.
+        """
+        # Retrieve strategy index using the name of the strategy
+        strategy_index = params_keys.get(strategy_name)
+
+        if strategy_index is None:
+            raise ValueError(f"Invalid strategy name: {strategy_name}")
+
+        # Get default parameters for the strategy from the param_strat_modified dictionary
+        strategy_params = param_strat_modified.get(strategy_index, [])
+        default_params = {}
+
+        # Initialize default parameters
+        for param, default, _, _, ptype in strategy_params:
+            default_params[param] = ptype(default)
+
+        # Override with custom parameters if provided
+        if custom_params:
+            for param, value in custom_params.items():
+                if param in default_params:
+                    default_params[param] = value
+
+        return default_params
+
 
 

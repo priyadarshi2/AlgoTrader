@@ -14,7 +14,11 @@ class TradeManager:
             'End': None,
             'Net': None,
             'Net Percentage': None,
+            'Total trades' : None,
+            'Winning trades' : None,
+            'Losing trades' : None,
         }
+
 
         # Trade log
         self.trades = {
@@ -23,6 +27,7 @@ class TradeManager:
             'DateTime': [],
         }
 
+        self.actions = []
         self.start_cash = None
         self.end_cash = None
         self.profit = None
@@ -55,6 +60,7 @@ class TradeManager:
         }
         for key, value in trade.items():
             self.trades[key].append(value)
+        self.actions.append(trade)
     
 
     def finalize_portfolio(self):
@@ -62,7 +68,7 @@ class TradeManager:
         Calculates portfolio performance at the end of the strategy.
         """
         self.start_cash = self.strategy.broker.startingcash
-        self.end_cash = self.strategy.broker.getcash()
+        self.end_cash = self.strategy.broker.getvalue()
         self.profit = self.end_cash - self.start_cash
         self.profit_perc = (self.profit/self.start_cash)*100
 
@@ -70,9 +76,16 @@ class TradeManager:
         self.portfolio['End'] = f"{round(self.end_cash, 3)}"
         self.portfolio['Net'] = "{0}{1}".format('+' if self.profit > 0 else '', round(self.profit,3))
         self.portfolio['Net Percentage'] = f"{round(self.profit_perc, 3)}%"
+        self.portfolio['Total trades'] = len(self.trades['Action'])
+        self.portfolio['Winning trades'] = len([trade for trade in self.trades['Action'] if trade == 'Buy'])
+        self.portfolio['Losing trades'] = len([trade for trade in self.trades['Action'] if trade == 'Sell'])
     
     def get_result(self):
-        return self.trades, self.portfolio
+        return self.actions, self.portfolio
+    
+    def addTradeData(self, tradedata):
+        self.trades.update(tradedata)
+    
 
 class Leg:
     def __init__(self, **kwargs):
