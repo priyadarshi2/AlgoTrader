@@ -25,3 +25,8 @@ input_valids = {
     5 : valids.validate_obv_inputs,
     6 : valids.validate_atr_inputs
 }
+
+custom_input_valids = {
+    7 : valids.validate_combined_pattern_params,
+    8 : valids.validate_ufo_params
+}

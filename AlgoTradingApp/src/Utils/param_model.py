@@ -90,7 +90,6 @@ class Params(BaseModel):
             raise ValueError("Both strategy_params and asset_params must be provided.")
 
         # Validate strategy name
-        from src.source_metadata import param_strat_modified, params_keys
         if params_keys.get(strategy_data["name"]) not in params_keys.values():
             print("strategy_data['name']",strategy_data["name"])
             raise ValueError(f"Invalid strategy name: {strategy_data['name']}")

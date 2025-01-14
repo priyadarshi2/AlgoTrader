@@ -70,6 +70,20 @@ def get_custom_backtest(param : CustomParams):
     summary["Strategy"] = param.strategy_params[0].name
     return {"name" : param.asset_params.ticker_symbol, "hist" : trades, "summary" : summary}
 
+def get_validate_custom_params(paramets : CustomParams):
+    
+    # Fetch stock data
+    data = get_stock_data(*paramets.asset_params.get_params_tuple())
+    paramets.set_asset_data_length(len(data))
+
+    key1 = params_keys[paramets.strategy_params[0].name]
+    key2 = params_keys[paramets.strategy_params[1].name]
+    # Call validate_params with data and parameter
+    result = [None, None]
+    result[0] = vdtr.validate_params(key=key1, paramets=paramets)
+    result[1] = vdtr.validate_params(key=key2, paramets=paramets)
+    return {"data": result}
+
 def customBacktest(data, param : CustomParams):
     data_feed = bt.feeds.PandasData(dataname=data)
     cerebro = bt.Cerebro()
@@ -81,3 +95,14 @@ def customBacktest(data, param : CustomParams):
     backtest_result = cerebro.run()
     result = backtest_result[0]
     return result
+
+def get_custom_backtest_df(param : CustomParams):
+    print("===============>get_custom_backtest_df")
+    stock_details = param.asset_params.get_params_tuple()
+    data = get_stock_data(*stock_details)
+    param.set_asset_data_length(len(data))
+    print("===============>param_set_length")
+    result = customBacktest(data,param)
+    trades, summary = result.trade_manager.get_result_df()
+    summary["Strategy"] = param.strategy_params[0].name
+    return {"name" : param.asset_params.ticker_symbol, "hist" : trades, "summary" : summary}

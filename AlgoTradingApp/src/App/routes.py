@@ -56,3 +56,30 @@ async def show_ufo_backtesting(params : CustomParams):
     # Fetch the backtest result
     result = srv.get_custom_backtest(params)
     return result
+
+@router.post("/custom-backtest-df", response_model=schm.TradeHistoryModel)
+async def show_ufo_backtesting_df(params : CustomParams):   
+    # Perform overall validation
+    print("params")
+    is_valid, errors = params.validate()
+    print("is_valid", is_valid)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=errors)
+
+    # Fetch the backtest result
+    result = srv.get_custom_backtest_df(params)
+    return result
+
+@router.post("/custom-param-validation", response_model=schm.ListModel)
+async def show_custom_parameters(params : CustomParams):
+    # Perform overall validation
+    print("params")
+    is_valid, errors = params.validate()
+    print("is_valid", is_valid)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=errors)
+
+    # Fetch the backtest result
+    result = srv.get_validate_custom_params(params)
+    return result
+  

@@ -64,6 +64,7 @@ class UFOStrategy(bt.Strategy):
             elif pattern.pattern_type in [cind.PatternType.RBD, cind.PatternType.DBD]:
                 if not self.position:  # Only enter if no position exists
                     self.trade_manager.execute_trade('sell', size=position_size)
+            print(f"Pattern detected: {pattern.pattern_type}, Position size: {position_size}, position {self.position}, Time: {self.data.datetime.datetime(0)}")
         
         # Manage existing positions
         if self.position:
@@ -82,6 +83,8 @@ class UFOStrategy(bt.Strategy):
                 (self.position.size > 0 and current_price >= take_profit) or
                 (self.position.size < 0 and current_price <= take_profit)):
                 self.close()
+
+            print(f"Current price: {current_price}, Stop price: {stop_price}, Take profit: {take_profit} psosition size : {self.position.size} time: {self.data.datetime.datetime(0)}")
     
     def _update_metrics(self):
         current_value = self.broker.getvalue()

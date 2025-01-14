@@ -83,8 +83,11 @@ class TradeManager:
     def get_result(self):
         return self.actions, self.portfolio
     
+    def get_result_df(self):
+        return self.trades, self.portfolio
+    
     def addTradeData(self, tradedata):
-        self.trades.update(tradedata)
+        self.portfolio.update(tradedata)
     
 
 class Leg:
